@@ -2,15 +2,28 @@
 
 
 # API KEY
-
 apikey=XXX
 
-echo "Podaj tekst do przetlumaczenia"
-read -r text
+# File Name
+path_file=$1
 
-text=$(echo "$text" | sed 's/ /%20/g') 
-# text=$(echo "$text" | sed 's/$/%0A/g')
-echo $text
+echo " "
+
+if [ -e "$path_file" ] ; then
+	read_file=$(cat "$path_file")
+else
+	echo "File doesnt exist"
+fi
+
+
+if [ -n "$1" ] ; then
+	text=$(echo "$read_file" | sed 's/ /%20/g')
+else
+	echo "Provide text to be translated: "
+	read -r input_text
+	text=$(echo "$input_text" | sed 's/ /%20/g')
+fi
+
 
 
 translator=$(curl -X POST 'https://api-free.deepl.com/v2/translate' \
@@ -18,23 +31,44 @@ translator=$(curl -X POST 'https://api-free.deepl.com/v2/translate' \
 	-d 'text='$text'' \
 	-d 'target_lang=EN')
 
+
 echo ""
-echo $translator
+
 language=$(echo "$translator" | jq '.translations[].detected_source_language' )
 translated_text=$(echo "$translator" | jq '.translations[].text' )
 
-echo ""
-echo "Text entered: $text"
-echo "Language detected: $language"
-echo "Translated text: $translated_text"
-echo ""
 
-# Process command line options
-while getopts ":t:" opt; do
-  case $opt in
-    l) text="$OPTARG" ;;
-    \?) echo "Invalid option: -$OPTARG" >&2
-        exit 1 ;;
-  esac
-done
+if [ -e "${path_file}_eng" ] ; then
+        echo "This file already exists"
+else
+        echo "$translated_text" > "${path_file}_eng"
+fi
+
+
+
+
+echo ""
+echo "---------------------------------------------------------------------------------------------------"
+
+echo "Text entered: "
+if [ -n "$1" ] ; then
+        echo "$read_file"
+else
+        echo "$input_text"
+fi
+
+echo "---------------------------------------------------------------------------------------------------"
+
+
+echo " "
+echo "Language detected: $language"
+echo " " 
+
+echo "---------------------------------------------------------------------------------------------------"
+
+
+echo "Translated text: " 
+echo "${translated_text:1:-1}"
+echo "---------------------------------------------------------------------------------------------------"
+echo " "
 
